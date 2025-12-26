@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard - JobCheck</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background: #111827;
+            color: white;
+            padding: 15px 25px;
+            font-size: 22px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            resize: vertical;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #1e40af;
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .extracted {
+            margin-top: 20px;
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout {
+            background: #ef4444;
+        }
+
+        .admin {
+            background: #2563eb;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    JobCheck — User Dashboard
+</div>
+
+<div class="container">
+
+    <h2>Check Job Authenticity</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <p><b>Paste Job Description:</b></p>
+        <textarea name="job_text" rows="6" placeholder="Paste job description here..."></textarea>
+
+        <p style="margin-top:20px;"><b>OR Upload Job Image:</b></p>
+        <input type="file" name="job_image">
+
+        <br>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+        <div class="result">
+            <h3>{{ prediction }}</h3>
+        </div>
+    {% endif %}
+
+    {% if extracted_text %}
+        <div class="extracted">
+            <h4>Extracted Text from Image:</h4>
+            <pre>{{ extracted_text }}</pre>
+        </div>
+    {% endif %}
+
+    <div class="actions">
+        <a class="btn logout" href="/logout">Logout</a>
+
+        <a class="btn admin" href="/admin/login">
+    Open Admin Dashboard
+</a>
+
+    </div>
+
+</div>
+
+</body>
+</html>
