@@ -1,26 +1,18 @@
-import sqlite3
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
-def get_db():
-    return sqlite3.connect("database.db")
+db = SQLAlchemy()
 
-def init_db():
-    db = get_db()
-    c = db.cursor()
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(10), default="user")  # user/admin
 
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )
-    """)
-
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS predictions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        result TEXT
-    )
-    """)
-
-    db.commit()
-    db.close()
+class Prediction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    job_text = db.Column(db.Text)
+    result = db.Column(db.String(10))
+    confidence = db.Column(db.Float)
+    user_id = db.Column(db.Integer)

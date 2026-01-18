@@ -1,70 +1,230 @@
-<link rel="stylesheet" href="/static/css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | JobShield AI</title>
 
-<div class="navbar">JobCheck — Admin Dashboard</div>
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
 
-<div class="container">
+    <!-- ChartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
 
-    <!-- STAT CARDS -->
-    <div class="cards">
-        <div class="card">
-            <h3>Total Users</h3>
-            <h1>{{ user_count }}</h1>
-        </div>
+<div class="layout">
 
-        <div class="card">
-            <h3>Total Predictions</h3>
-            <h1>{{ prediction_count }}</h1>
-        </div>
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+        <h2 class="logo">JobShield AI</h2>
 
-        <div class="card">
-            <h3>Fake Jobs</h3>
-            <h1 style="color:#ef4444">{{ fake_count }}</h1>
-        </div>
+        <nav>
+            <a class="active" href="/admin/dashboard">Dashboard</a>
+            <a href="/predict">Analyze Job</a>
+            <a href="/dashboard">Prediction History</a>
 
-        <div class="card">
-            <h3>Real Jobs</h3>
-            <h1 style="color:#22c55e">{{ real_count }}</h1>
-        </div>
-    </div>
+            <!-- Retrain placeholder -->
+            <a href="/admin/retrain">Retrain Model</a>
 
-    <!-- CHARTS -->
-    <div class="charts">
-        <div class="chart-box">
-            <canvas id="barChart"></canvas>
-        </div>
-        <div class="chart-box">
-            <canvas id="pieChart"></canvas>
-        </div>
-    </div>
 
-    <a class="logout" href="/logout">Logout</a>
+            <a href="/admin/download-history">Download History</a>
+            <a class="logout" href="/logout">Logout</a>
+        </nav>
+    </aside>
 
+    <!-- ================= MAIN ================= -->
+    <main class="main">
+
+        <h1>Admin Dashboard</h1>
+
+        <!-- ================= STATS ================= -->
+        <section class="cards">
+            <div class="card">
+                <p>Total Users</p>
+                <h3>{{ stats.total_users }}</h3>
+            </div>
+
+            <div class="card">
+                <p>Total Admins</p>
+                <h3>{{ stats.total_admins }}</h3>
+            </div>
+
+            <div class="card">
+                <p>Total Predictions</p>
+                <h3>{{ stats.total_predictions }}</h3>
+            </div>
+
+            <div class="card danger">
+                <p>Fake Jobs</p>
+                <h3>{{ stats.fake_jobs }}</h3>
+            </div>
+
+            <div class="card success">
+                <p>Real Jobs</p>
+                <h3>{{ stats.real_jobs }}</h3>
+            </div>
+        </section>
+
+        <!-- ================= ANALYTICS ================= -->
+        <section class="analytics">
+            <div class="analytics-card">
+                <p>Fake Job Rate</p>
+                <h3>
+                    {{ (stats.fake_jobs / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
+                </h3>
+            </div>
+
+            <div class="analytics-card">
+                <p>Real Job Rate</p>
+                <h3>
+                    {{ (stats.real_jobs / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
+                </h3>
+            </div>
+
+            <div class="analytics-card">
+                <p>Detection Coverage</p>
+                <h3>
+                    {{ ((stats.fake_jobs + stats.real_jobs) / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
+                </h3>
+            </div>
+        </section>
+
+        <!-- ================= CHARTS ================= -->
+        <section class="charts">
+            <div class="chart-box">
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="barChart"></canvas>
+            </div>
+        </section>
+
+        <!-- ================= FLAGGED POSTS ================= -->
+        <!-- ================= FLAGGED POSTS ================= -->
+<section class="table-section">
+    <h2>Flagged Job Posts (High Risk)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Prediction</th>
+                <th>Confidence</th>
+                <th>Source</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="5" style="text-align:center;">No flagged posts</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+
+               
+
+        <!-- ================= DAILY LOGS ================= -->
+        <section class="table-section">
+            <h2>Daily Prediction Logs</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Fake</th>
+                        <th>Real</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for d in daily_logs %}
+                    <tr>
+                        <td>{{ d.day }}</td>
+                        <td>{{ d.total }}</td>
+                        <td class="danger">{{ d.fake }}</td>
+                        <td class="success">{{ d.real }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align:center;">No logs available</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ================= USERS ================= -->
+        <section class="table-section">
+            <h2>Users Management</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                {% for u in users %}
+                    <tr>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.email }}</td>
+                        <td class="role {{ u.role }}">{{ u.role }}</td>
+                        <td>
+                            {% if u.role == 'user' %}
+                                <a class="btn promote" href="/admin/promote/{{ u.id }}">Promote</a>
+                            {% else %}
+                                <a class="btn demote" href="/admin/demote/{{ u.id }}">Demote</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+    </main>
 </div>
 
+<!-- ================= CHART SCRIPT ================= -->
 <script>
-const fakeCount = Number("{{ fake_count }}");
-const realCount = Number("{{ real_count }}");
+new Chart(document.getElementById("pieChart"), {
+    type: "pie",
+    data: {
+        labels: ["Fake Jobs", "Real Jobs"],
+        datasets: [{
+            data: [{{ stats.fake_jobs }}, {{ stats.real_jobs }}],
+            backgroundColor: ["#ef4444", "#22c55e"]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: "bottom" }
+        }
+    }
+});
 
 new Chart(document.getElementById("barChart"), {
     type: "bar",
     data: {
-        labels: ["Fake", "Real"],
+        labels: ["Fake Jobs", "Real Jobs"],
         datasets: [{
-            data: [fakeCount, realCount],
+            data: [{{ stats.fake_jobs }}, {{ stats.real_jobs }}],
             backgroundColor: ["#ef4444", "#22c55e"]
         }]
-    }
-});
-
-new Chart(document.getElementById("pieChart"), {
-    type: "pie",
-    data: {
-        labels: ["Fake", "Real"],
-        datasets: [{
-            data: [fakeCount, realCount],
-            backgroundColor: ["#ef4444", "#22c55e"]
-        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
     }
 });
 </script>
+
+</body>
+</html>

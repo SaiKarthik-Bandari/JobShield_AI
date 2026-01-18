@@ -1,13 +1,35 @@
-<link rel="stylesheet" href="/static/css/style.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | JobCheck</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
 
-<div class="form-box">
-    <h2>User Login</h2>
-    <form method="POST">
-        <input name="username" placeholder="Username">
-        <input type="password" name="password" placeholder="Password">
-        <button>Login</button>
+<div class="background"></div>
+
+<div class="login-card">
+    <h2>Login</h2>
+    <p class="subtitle">Access your JobCheck account</p>
+
+    <form method="POST" action="/login">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+
+        <!-- ✅ SINGLE FORGOT PASSWORD LINK -->
+        <div class="links">
+            <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit">Login</button>
     </form>
-    <p style="text-align:center;margin-top:15px;">
-        <a href="/signup">Create Account</a>
+
+    <p class="signup-text">
+        Don’t have an account?
+        <a href="/signup">Sign up</a>
     </p>
 </div>
+
+</body>
+</html>

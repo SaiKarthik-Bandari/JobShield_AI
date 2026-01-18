@@ -1,8 +1,11 @@
 flask
+flask-login
+flask-sqlalchemy
+scikit-learn
 pandas
 numpy
-scikit-learn
 nltk
+joblib
+pytesseract
 pillow
 opencv-python
-pytesseract

@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "kid": "jobcheck-key-1",
+      "alg": "RS256",
+      "n": "3Rdiex-T_Edv3zPAfT-Geb2SfMWNrt7_JuLGNc2aWAdV_Quprpm2XB9qyaVeAehiWfcuPmaaWS6k_3IkeRjCpnspm8X7sLYVAnjFlvZv1ZnYXgWrVgHjPk3pa8_Zf71lgXthsVnWQonjYXdjg_UXzEnyv70bYbUqTc9lA",
+      "e": "AQAB"
+    }
+  ]
+}

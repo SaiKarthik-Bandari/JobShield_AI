@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analyze Job | JobCheck</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/predict.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>Job Post Authenticity Checker</h1>
+        <p class="subtitle">
+            Paste a job description or upload an image to verify whether the job is real or fake
+        </p>
+
+        <form method="POST" enctype="multipart/form-data">
+
+            <label>Paste Job Description</label>
+            <textarea name="job_text" placeholder="Paste the complete job description here..."></textarea>
+
+            <div class="or">OR</div>
+
+            <label>Upload Job Image (OCR)</label>
+            <input type="file" name="job_image" accept="image/*">
+
+            <button type="submit" class="analyze-btn">Analyze Job</button>
+        </form>
+
+        {% if result %}
+        <div class="result-box {{ 'real' if result=='Real Job' else 'fake' if result=='Fake Job' else 'invalid' }}">
+            <h2>{{ result }}</h2>
+            <p>Confidence: {{ confidence }}%</p>
+        </div>
+        {% endif %}
+
+        <div class="actions">
+            <a href="/dashboard" class="secondary-btn">Go to Dashboard</a>
+            <a href="/logout" class="danger-btn">Logout</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

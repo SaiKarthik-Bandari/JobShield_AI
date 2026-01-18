@@ -1,28 +1,10 @@
-import pickle
-import re
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+import joblib
 
-nltk.download("stopwords")
-nltk.download("wordnet")
+model = joblib.load("model/fake_real_job_model.pkl")
+vectorizer = joblib.load("model/tfidf_vectorizer.pkl")
 
-stop_words = set(stopwords.words("english"))
-lemmatizer = WordNetLemmatizer()
-
-# Load model & vectorizer
-model = pickle.load(open("model/fake_real_job_model.pkl", "rb"))
-vectorizer = pickle.load(open("model/tfidf_vectorizer.pkl", "rb"))
-
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r"<.*?>", "", text)
-    text = re.sub(r"[^a-z\s]", "", text)
-    words = [lemmatizer.lemmatize(w) for w in text.split() if w not in stop_words]
-    return " ".join(words)
-
-def predict_job_text(text):
-    clean = clean_text(text)
-    vec = vectorizer.transform([clean])
-    pred = model.predict(vec)[0]
-    return "🚨 Fake Job Posting" if pred == 1 else "✅ Real Job Posting"
+def predict_job(text):
+    vec = vectorizer.transform([text])
+    prob = model.predict_proba(vec)[0]
+    label = "FAKE" if prob[1] > 0.5 else "REAL"
+    return label, round(max(prob) * 100, 2)

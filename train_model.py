@@ -2,57 +2,98 @@ import pandas as pd
 import re
 import pickle
 import nltk
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
 import os
 
-# Download required NLTK data
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+
+# -----------------------------
+# Setup
+# -----------------------------
+os.makedirs("model", exist_ok=True)
+
 nltk.download("stopwords")
 nltk.download("wordnet")
-
-# Load dataset
-df = pd.read_csv("data/fake_job_postings.csv")
-
-# Combine text columns
-df["text"] = (
-    df["title"].fillna("") + " " +
-    df["company_profile"].fillna("") + " " +
-    df["description"].fillna("") + " " +
-    df["requirements"].fillna("") + " " +
-    df["benefits"].fillna("")
-)
 
 stop_words = set(stopwords.words("english"))
 lemmatizer = WordNetLemmatizer()
 
+# -----------------------------
+# Text Cleaning
+# -----------------------------
 def clean_text(text):
-    text = text.lower()
+    text = str(text).lower()
+    text = re.sub(r"http\S+", "", text)
     text = re.sub(r"<.*?>", "", text)
-    text = re.sub(r"[^a-z\s]", "", text)
-    words = [lemmatizer.lemmatize(w) for w in text.split() if w not in stop_words]
+    text = re.sub(r"[^a-zA-Z]", " ", text)
+    words = text.split()
+    words = [lemmatizer.lemmatize(w) for w in words if w not in stop_words]
     return " ".join(words)
 
-# Clean text
-df["clean_text"] = df["text"].apply(clean_text)
+# -----------------------------
+# RETRAIN FUNCTION (IMPORTANT)
+# -----------------------------
+def retrain_model():
+    # Load Dataset
+    df = pd.read_csv("Data/fake_job_postings.csv")
+    df = df.fillna("")
 
-X = df["clean_text"]
-y = df["fraudulent"]
+    df["text"] = (
+        df["title"] + " " +
+        df["company_profile"] + " " +
+        df["description"] + " " +
+        df["requirements"] + " " +
+        df["benefits"]
+    )
 
-# Create TF-IDF vectorizer
-vectorizer = TfidfVectorizer(max_features=5000)
-X_vec = vectorizer.fit_transform(X)
+    df["clean_text"] = df["text"].apply(clean_text)
 
-# Train model
-model = LogisticRegression(max_iter=1000, class_weight="balanced")
-model.fit(X_vec, y)
+    X = df["clean_text"]
+    y = df["fraudulent"]
 
-# Create model folder if not exists
-os.makedirs("model", exist_ok=True)
+    # Train/Test Split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-# Save model and vectorizer
-pickle.dump(model, open("model/fake_real_job_model.pkl", "wb"))
-pickle.dump(vectorizer, open("model/tfidf_vectorizer.pkl", "wb"))
+    # Vectorization
+    vectorizer = TfidfVectorizer(max_features=6000)
+    X_train_vec = vectorizer.fit_transform(X_train)
+    X_test_vec = vectorizer.transform(X_test)
 
-print("✅ Model and TF-IDF vectorizer created successfully")
+    # Model
+    model = LogisticRegression(
+        max_iter=1000,
+        class_weight="balanced"
+    )
+
+    model.fit(X_train_vec, y_train)
+
+    # Evaluation (for logs)
+    y_pred = model.predict(X_test_vec)
+    acc = accuracy_score(y_test, y_pred)
+
+    print("Accuracy:", acc)
+    print(classification_report(y_test, y_pred))
+
+    # Save Model
+    with open("model/fake_real_job_model.pkl", "wb") as f:
+        pickle.dump(model, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open("model/tfidf_vectorizer.pkl", "wb") as f:
+        pickle.dump(vectorizer, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    return acc  # return accuracy for confirmation
+
+
+# -----------------------------
+# OPTIONAL: Standalone run
+# -----------------------------
+if __name__ == "__main__":
+    retrain_model()
+    print("✅ Model retrained and saved successfully.")

@@ -159,3 +159,76 @@ table th {
     border-radius: 8px;
     text-decoration: none;
 }
+* {
+    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-container {
+    background: #ffffff;
+    width: 380px;
+    padding: 35px 30px;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #1f2937;
+}
+
+.auth-container input {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 15px;
+}
+
+.auth-container input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.auth-container button {
+    width: 100%;
+    padding: 12px;
+    background: #2563eb;
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.auth-container button:hover {
+    background: #1e40af;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
