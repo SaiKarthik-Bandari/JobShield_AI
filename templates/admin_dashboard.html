@@ -9,6 +9,121 @@
 
     <!-- ChartJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Additional styles for user management */
+        .btn {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn.promote {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .btn.promote:hover {
+            background-color: #059669;
+        }
+        
+        .btn.demote {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .btn.demote:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn.disabled {
+            background-color: #6b7280;
+            color: #d1d5db;
+            cursor: not-allowed;
+        }
+        
+        .current-user-row {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        .current-user-row:hover {
+            background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        .current-user-badge {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 5px;
+        }
+        
+        .role.admin {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .role.user {
+            color: #6b7280;
+        }
+        
+        .conf-high {
+            color: #ef4444;
+            font-weight: 600;
+            background-color: rgba(239, 68, 68, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .source-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .source-badge.text {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .source-badge.image {
+            background-color: #f3e8ff;
+            color: #7c3aed;
+        }
+        
+        /* Last admin warning */
+        .last-admin-warning {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .last-admin-warning i {
+            color: #f59e0b;
+        }
+    </style>
 </head>
 <body>
 
@@ -22,11 +137,7 @@
             <a class="active" href="/admin/dashboard">Dashboard</a>
             <a href="/predict">Analyze Job</a>
             <a href="/dashboard">Prediction History</a>
-
-            <!-- Retrain placeholder -->
             <a href="/admin/retrain">Retrain Model</a>
-
-
             <a href="/admin/download-history">Download History</a>
             <a class="logout" href="/logout">Logout</a>
         </nav>
@@ -70,22 +181,28 @@
             <div class="analytics-card">
                 <p>Fake Job Rate</p>
                 <h3>
-                    {{ (stats.fake_jobs / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
+                    {% if stats.total_predictions > 0 %}
+                        {{ (stats.fake_jobs / stats.total_predictions * 100) | round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
                 </h3>
             </div>
 
             <div class="analytics-card">
                 <p>Real Job Rate</p>
                 <h3>
-                    {{ (stats.real_jobs / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
+                    {% if stats.total_predictions > 0 %}
+                        {{ (stats.real_jobs / stats.total_predictions * 100) | round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
                 </h3>
             </div>
 
             <div class="analytics-card">
-                <p>Detection Coverage</p>
-                <h3>
-                    {{ ((stats.fake_jobs + stats.real_jobs) / stats.total_predictions * 100) | round(1) if stats.total_predictions else 0 }}%
-                </h3>
+                <p>High Risk Jobs</p>
+                <h3>{{ stats.flagged_jobs }}</h3>
             </div>
         </section>
 
@@ -101,28 +218,56 @@
         </section>
 
         <!-- ================= FLAGGED POSTS ================= -->
-        <!-- ================= FLAGGED POSTS ================= -->
-<section class="table-section">
-    <h2>Flagged Job Posts (High Risk)</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Prediction</th>
-                <th>Confidence</th>
-                <th>Source</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td colspan="5" style="text-align:center;">No flagged posts</td>
-            </tr>
-        </tbody>
-    </table>
-</section>
-
-               
+        <section class="table-section">
+            <h2>Flagged Job Posts (High Risk)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>Source</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if flagged_jobs and flagged_jobs|length > 0 %}
+                        {% for job in flagged_jobs %}
+                        <tr>
+                            <td>
+                                {{ job.username }}
+                                {% if job.username == current_user %}
+                                    <span class="current-user-badge">You</span>
+                                {% endif %}
+                            </td>
+                            <td class="danger">{{ job.prediction }}</td>
+                            <td class="conf-high">{{ job.confidence }}%</td>
+                            <td>
+                                {% if job.source == 'ocr' or job.source == 'image' %}
+                                    <span class="source-badge image">
+                                        <i class="fas fa-image" style="margin-right: 4px;"></i>Image
+                                    </span>
+                                {% else %}
+                                    <span class="source-badge text">
+                                        <i class="fas fa-file-alt" style="margin-right: 4px;"></i>Text
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>{{ job.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding: 20px;">
+                                <div style="color: #666; font-style: italic;">
+                                    No flagged posts with confidence ≥ 70%
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
 
         <!-- ================= DAILY LOGS ================= -->
         <section class="table-section">
@@ -137,18 +282,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                {% for d in daily_logs %}
-                    <tr>
-                        <td>{{ d.day }}</td>
-                        <td>{{ d.total }}</td>
-                        <td class="danger">{{ d.fake }}</td>
-                        <td class="success">{{ d.real }}</td>
-                    </tr>
+                {% if daily_logs and daily_logs|length > 0 %}
+                    {% for d in daily_logs %}
+                        <tr>
+                            <td>{{ d.day }}</td>
+                            <td>{{ d.total }}</td>
+                            <td class="danger">{{ d.fake }}</td>
+                            <td class="success">{{ d.real }}</td>
+                        </tr>
+                    {% endfor %}
                 {% else %}
                     <tr>
                         <td colspan="4" style="text-align:center;">No logs available</td>
                     </tr>
-                {% endfor %}
+                {% endif %}
                 </tbody>
             </table>
         </section>
@@ -156,6 +303,11 @@
         <!-- ================= USERS ================= -->
         <section class="table-section">
             <h2>Users Management</h2>
+            
+            <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+                <i class="fas fa-user-circle" style="color: #3b82f6; margin-right: 8px;"></i>
+                <span>You are logged in as: <strong>{{ current_user }}</strong></span>
+            </div>
 
             <table>
                 <thead>
@@ -169,23 +321,56 @@
                 </thead>
 
                 <tbody>
-                {% for u in users %}
+                {% if users and users|length > 0 %}
+                    {% set admin_count = namespace(value=0) %}
+                    {% for u in users if u.role == 'admin' %}
+                        {% set admin_count.value = admin_count.value + 1 %}
+                    {% endfor %}
+                    
+                    {% for u in users %}
+                        <tr {% if u.username == current_user %}class="current-user-row"{% endif %}>
+                            <td>{{ u.id }}</td>
+                            <td>
+                                {{ u.username }}
+                                {% if u.username == current_user %}
+                                    <span class="current-user-badge">You</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ u.email }}</td>
+                            <td class="role {{ u.role }}">{{ u.role }}</td>
+                            <td>
+                                {% if u.role == 'user' %}
+                                    <a class="btn promote" href="/admin/promote/{{ u.id }}" 
+                                       onclick="return confirm('Promote {{ u.username }} to admin role?')">
+                                        <i class="fas fa-arrow-up" style="margin-right: 5px;"></i>Promote
+                                    </a>
+                                {% elif u.role == 'admin' and u.username != current_user %}
+                                    <a class="btn demote" href="/admin/demote/{{ u.id }}" 
+                                       onclick="return confirmDemote('{{ u.username }}', {{ admin_count.value }})">
+                                        <i class="fas fa-arrow-down" style="margin-right: 5px;"></i>Demote
+                                    </a>
+                                {% elif u.role == 'admin' and u.username == current_user %}
+                                    <span class="btn disabled">
+                                        <i class="fas fa-user-shield" style="margin-right: 5px;"></i>Self
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
                     <tr>
-                        <td>{{ u.id }}</td>
-                        <td>{{ u.username }}</td>
-                        <td>{{ u.email }}</td>
-                        <td class="role {{ u.role }}">{{ u.role }}</td>
-                        <td>
-                            {% if u.role == 'user' %}
-                                <a class="btn promote" href="/admin/promote/{{ u.id }}">Promote</a>
-                            {% else %}
-                                <a class="btn demote" href="/admin/demote/{{ u.id }}">Demote</a>
-                            {% endif %}
-                        </td>
+                        <td colspan="5" style="text-align:center;">No users found</td>
                     </tr>
-                {% endfor %}
+                {% endif %}
                 </tbody>
             </table>
+            
+            {% if admin_count.value == 1 %}
+                <div class="last-admin-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Warning: You are the only admin. At least one admin must remain in the system.</span>
+                </div>
+            {% endif %}
         </section>
 
     </main>
@@ -193,36 +378,108 @@
 
 <!-- ================= CHART SCRIPT ================= -->
 <script>
+// Pie Chart
 new Chart(document.getElementById("pieChart"), {
     type: "pie",
     data: {
         labels: ["Fake Jobs", "Real Jobs"],
         datasets: [{
             data: [{{ stats.fake_jobs }}, {{ stats.real_jobs }}],
-            backgroundColor: ["#ef4444", "#22c55e"]
+            backgroundColor: ["#ef4444", "#22c55e"],
+            borderWidth: 1
         }]
     },
     options: {
         responsive: true,
         plugins: {
-            legend: { position: "bottom" }
+            legend: { 
+                position: "bottom",
+                labels: {
+                    padding: 20,
+                    font: { size: 12 }
+                }
+            },
+            title: {
+                display: true,
+                text: 'Job Prediction Distribution',
+                font: { size: 14 }
+            }
         }
     }
 });
 
+// Bar Chart
 new Chart(document.getElementById("barChart"), {
     type: "bar",
     data: {
         labels: ["Fake Jobs", "Real Jobs"],
         datasets: [{
+            label: "Count",
             data: [{{ stats.fake_jobs }}, {{ stats.real_jobs }}],
-            backgroundColor: ["#ef4444", "#22c55e"]
+            backgroundColor: ["#ef4444", "#22c55e"],
+            borderWidth: 1
         }]
     },
     options: {
         responsive: true,
-        plugins: { legend: { display: false } }
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
+            }
+        },
+        plugins: {
+            legend: { display: false },
+            title: {
+                display: true,
+                text: 'Job Prediction Comparison',
+                font: { size: 14 }
+            }
+        }
     }
+});
+
+// Custom confirmation for demote action
+function confirmDemote(username, adminCount) {
+    // Prevent demoting the last admin
+    if (adminCount <= 1) {
+        alert('Cannot demote the last admin! At least one admin must remain in the system.');
+        return false;
+    }
+    
+    // Check if trying to demote self (shouldn't happen with our logic)
+    const currentUser = "{{ current_user }}";
+    if (username === currentUser) {
+        alert('You cannot demote yourself!');
+        return false;
+    }
+    
+    return confirm(`Are you sure you want to demote ${username} to user role?`);
+}
+
+// Prevent self-demotion even if someone tries to manipulate the URL
+document.addEventListener('DOMContentLoaded', function() {
+    const demoteButtons = document.querySelectorAll('.btn.demote');
+    const currentUser = "{{ current_user }}";
+    
+    demoteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            const userId = href.split('/').pop();
+            
+            // Check if this is the current user (in a real app, you'd need to check user ID)
+            // For now, we'll check by username from a data attribute if available
+            const row = this.closest('tr');
+            const usernameCell = row.querySelector('td:nth-child(2)');
+            const username = usernameCell.textContent.replace('You', '').trim();
+            
+            if (username === currentUser) {
+                e.preventDefault();
+                alert('You cannot demote yourself!');
+                return false;
+            }
+        });
+    });
 });
 </script>
 

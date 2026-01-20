@@ -242,6 +242,12 @@ def admin_dashboard():
     if get_jwt()["role"] != "admin":
         return redirect("/login")
 
+    # Get current user info
+    current_user_id = get_jwt_identity()
+    cursor.execute("SELECT username FROM users WHERE id=%s", (current_user_id,))
+    current_user_row = cursor.fetchone()
+    current_user = current_user_row["username"] if current_user_row else "Unknown"
+
     cursor.execute("SELECT COUNT(*) total_users FROM users")
     total_users = cursor.fetchone()["total_users"]
 
@@ -262,11 +268,28 @@ def admin_dashboard():
     real_jobs = row["real_jobs"] or 0
 
     cursor.execute("""
-        SELECT COUNT(*) AS flagged_jobs
+        SELECT COUNT(*) AS flagged_jobs_count
         FROM predictions
         WHERE prediction='Fake Job' AND confidence >= 70
     """)
-    flagged_jobs = cursor.fetchone()["flagged_jobs"]
+    flagged_jobs_count = cursor.fetchone()["flagged_jobs_count"]
+
+    # Fetch flagged job posts for the table
+    cursor.execute("""
+        SELECT 
+            u.username,
+            p.prediction,
+            p.confidence,
+            p.source,
+            DATE(p.created_at) as date
+        FROM predictions p 
+        JOIN users u ON u.id = p.user_id
+        WHERE p.prediction = 'Fake Job' 
+          AND p.confidence >= 70
+        ORDER BY p.confidence DESC, p.created_at DESC
+        LIMIT 10
+    """)
+    flagged_jobs = cursor.fetchall()
 
     cursor.execute("""
         SELECT
@@ -293,27 +316,54 @@ def admin_dashboard():
             "total_predictions": total_predictions,
             "fake_jobs": fake_jobs,
             "real_jobs": real_jobs,
-            "flagged_jobs": flagged_jobs
+            "flagged_jobs": flagged_jobs_count
         },
         daily_logs=daily_logs,
-        users=users
+        users=users,
+        flagged_jobs=flagged_jobs,
+        current_user=current_user  # Added current user
     )
 
-# ---------------- PROMOTE / DEMOTE ----------------
+# ---------------- PROMOTE ----------------
 @app.route("/admin/promote/<int:user_id>")
 @jwt_required()
 def promote(user_id):
     if get_jwt()["role"] != "admin":
         return redirect("/login")
+    
     cursor.execute("UPDATE users SET role='admin' WHERE id=%s", (user_id,))
     db.commit()
     return redirect("/admin/dashboard")
 
+# ---------------- DEMOTE WITH PROTECTIONS ----------------
 @app.route("/admin/demote/<int:user_id>")
 @jwt_required()
 def demote(user_id):
     if get_jwt()["role"] != "admin":
         return redirect("/login")
+    
+    current_user_id = get_jwt_identity()
+    
+    # 1. Prevent self-demotion
+    if user_id == current_user_id:
+        return redirect("/admin/dashboard")
+    
+    # 2. Check if this is the last admin
+    cursor.execute("SELECT COUNT(*) as admin_count FROM users WHERE role='admin'")
+    admin_count = cursor.fetchone()["admin_count"]
+    
+    # 3. Check if the target user is an admin
+    cursor.execute("SELECT role FROM users WHERE id=%s", (user_id,))
+    target_user = cursor.fetchone()
+    
+    if not target_user or target_user["role"] != "admin":
+        return redirect("/admin/dashboard")  # Not an admin, nothing to demote
+    
+    # 4. Prevent demoting the last admin
+    if admin_count <= 1:
+        return redirect("/admin/dashboard")
+    
+    # 5. Perform demotion
     cursor.execute("UPDATE users SET role='user' WHERE id=%s", (user_id,))
     db.commit()
     return redirect("/admin/dashboard")
@@ -343,10 +393,9 @@ def admin_download():
         headers={"Content-Disposition":"attachment; filename=all_predictions.csv"}
     )
 
-
-
-
-#=========================================
+# =====================================================
+# MODEL RETRAINING
+# =====================================================
 @app.route("/admin/retrain")
 @jwt_required()
 def retrain_model_route():
@@ -355,12 +404,15 @@ def retrain_model_route():
 
     try:
         train_model.retrain_model()
+        # Reload the retrained model
+        global model, vectorizer
+        model = pickle.load(open("model/fake_real_job_model.pkl", "rb"))
+        vectorizer = pickle.load(open("model/tfidf_vectorizer.pkl", "rb"))
         print("✅ Model retrained successfully")
     except Exception as e:
         print("❌ Retraining failed:", e)
 
     return redirect("/admin/dashboard")
-
 
 # =====================================================
 # RUN
