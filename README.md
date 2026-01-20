@@ -477,11 +477,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Tesseract OCR developers
 - All contributors and testers
 
-## ⭐ Support
-
-If you find this project helpful, please give it a star! ⭐
-
-[![Star History Chart](https://api.star-history.com/svg?repos=SaiKarthik-Bandari/JobShield_AI&type=Date)](https://star-history.com/#SaiKarthik-Bandari/JobShield_AI&Date)
 
 ---
 
